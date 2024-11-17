@@ -1,0 +1,21 @@
+# Virtual ENV Files
+venv/
+
+# Pycharm and idea editors
+.idea/
+
+# sqlite
+*.sqlite3
+
+# pyc files
+*.pyc
+
+# media files
+media/
+
+# vs code
+.vscode/
+
+# Compressor Cache
+static/CACHE/
+/static/
