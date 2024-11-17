@@ -19,3 +19,5 @@ media/
 # Compressor Cache
 static/CACHE/
 /static/
+
+/node_modules/

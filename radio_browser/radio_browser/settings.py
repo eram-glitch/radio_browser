@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'tailwind',
     'django_browser_reload',
     'compressor',
+    'theme',
     
     'django.contrib.admin',
     'django.contrib.auth',
@@ -62,7 +63,7 @@ ROOT_URLCONF = 'radio_browser.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'theme' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -149,3 +150,6 @@ STATICFILES_FINDERS.append('compressor.finders.CompressorFinder')
 
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [
+    BASE_DIR / "theme" / "static",
+]
