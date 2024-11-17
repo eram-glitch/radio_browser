@@ -1,8 +1,9 @@
 
+
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-import requests
+from pyradios import RadioBrowser
 from .models import Favorite
 
 def home(request):
@@ -13,10 +14,16 @@ def search_stations(request):
     page = int(request.GET.get('page', 1))
     limit = 15
     offset = (page - 1) * limit
-    url = f'http://all.api.radio-browser.info/json/stations/search?name={query}&limit={limit}&offset={offset}'
-    response = requests.get(url)
-    stations = response.json()
-    return JsonResponse(stations, safe=False)
+    
+    try:
+        rb = RadioBrowser()
+        stations = rb.search(name=query, limit=limit, offset=offset)
+        return JsonResponse(stations, safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+
 
 @login_required
 def favorites(request):
