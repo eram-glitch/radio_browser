@@ -1,0 +1,84 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-screen-xl mx-auto">
+    <h1 class="text-3xl font-bold mb-4">Your Favorite Stations</h1>
+    
+    <div x-data="{ favorites: [] }" x-init="fetchFavorites()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <template x-for="station in favorites" :key="station.id">
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h2 x-text="station.name" class="text-xl font-bold mb-2"></h2>
+                <p x-text="station.country" class="text-gray-600"></p>
+                <button @click="playStation(station)" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Play</button>
+                <button @click="removeFavorite(station.id)" class="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Remove</button>
+            </div>
+        </template>
+    </div>
+
+    <div id="player" class="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg hidden">
+        <div class="max-w-screen-xl mx-auto flex items-center justify-between">
+            <div>
+                <h3 id="now-playing" class="text-lg font-bold"></h3>
+                <p id="station-name" class="text-gray-600"></p>
+            </div>
+            <audio id="audio-player" controls></audio>
+        </div>
+    </div>
+</div>
+
+<script>
+    function fetchFavorites() {
+        this.favorites = JSON.parse('{{ favorites|safe }}');
+    }
+        // Implement favorite stations fetching logic here
+    }
+
+    function playStation(station) {
+        const player = document.getElementById('player');
+        const audioPlayer = document.getElementById('audio-player');
+        const nowPlaying = document.getElementById('now-playing');
+        const stationName = document.getElementById('station-name');
+
+        player.classList.remove('hidden');
+        audioPlayer.src = station.url;
+        audioPlayer.play();
+        nowPlaying.textContent = 'Now Playing:';
+        stationName.textContent = station.name;
+    }
+
+    function removeFavorite(stationId) {
+        fetch('/remove_favorite/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `station_id=${stationId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                this.favorites = this.favorites.filter(station => station.station_id !== stationId);
+            }
+        });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+        // Implement remove favorite logic here
+    }
+</script>
+{% endblock %}

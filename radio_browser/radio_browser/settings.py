@@ -31,6 +31,12 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'radio',
+    'accounts',
+    'tailwind',
+    'django_browser_reload',
+    'compressor',
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -41,6 +47,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django_browser_reload.middleware.BrowserReloadMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -118,7 +125,27 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Tailwind CSS configuration
+TAILWIND_APP_NAME = 'theme'
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+
+# Django Compressor
+COMPRESS_ROOT = BASE_DIR / 'static'
+COMPRESS_ENABLED = True
+STATICFILES_FINDERS.append('compressor.finders.CompressorFinder')
+
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'

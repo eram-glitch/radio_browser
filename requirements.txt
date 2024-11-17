@@ -1,0 +1,6 @@
+
+Django==3.2.10
+django-tailwind==3.1.1
+django-compressor==3.1
+django-browser-reload==1.6.0
+requests==2.26.0
