@@ -121,33 +121,38 @@ function favoriteApp() {
             }
         },
         removeFromFavorites(stationId) {
-            fetch(`/remove_favorite/`, {
+            fetch(/remove_favorite/, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
                     'X-CSRFToken': getCookie('csrftoken')
                 },
-                body: `station_id=${stationId}`
+                body: JSON.stringify({ station_id: stationId })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
-                    this.favorites = this.favorites.filter(station => station.id !== stationId);
-                    if (this.currentStation && this.currentStation.id === stationId) {
+                    this.favorites = this.favorites.filter(station => station.station_id !== stationId);
+                    if (this.currentStation && this.currentStation.station_id === stationId) {
                         this.$refs.audioPlayer.pause();
                         this.currentStation = null;
                         this.isPlaying = false;
                     }
-                    alert('Removed from favorites!');
+                    console.log('Removed from favorites!');
                 } else {
-                    alert('Failed to remove from favorites. Please try again.');
+                    throw new Error(data.message || 'Failed to remove from favorites');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                alert(error.message || 'An error occurred. Please try again.');
             });
-        }
+        }        
     };
 }
 

@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from pyradios import RadioBrowser
 from .models import Favorite
 from django.core.paginator import Paginator
+import json
+from django.views.decorators.http import require_http_methods
 
 def home(request):
     return render(request, 'home.html')
@@ -67,6 +69,12 @@ def favorites_list(request):
 def remove_favorite(request):
     if request.method == 'POST':
         station_id = request.POST.get('station_id')
-        Favorite.objects.filter(user=request.user, station_id=station_id).delete()
-        return JsonResponse({'success': True})
-    return JsonResponse({'success': False})
+        if not station_id:
+            return JsonResponse({'success': False, 'message': 'Station ID is required'})
+        
+        deleted, _ = Favorite.objects.filter(user=request.user, station_id=station_id).delete()
+        if deleted:
+            return JsonResponse({'success': True, 'message': 'Favorite removed successfully'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Favorite not found'})
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})

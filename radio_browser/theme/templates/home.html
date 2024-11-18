@@ -9,7 +9,7 @@
             <div class="md:w-1/2 mb-8 md:mb-0">
                 <h1 class="text-4xl md:text-6xl font-bold mb-4">Welcome to Radyoo!</h1>
                 <p class="text-xl md:text-2xl mb-6">Discover and listen to radio stations from around the world.</p>
-                <button @click="scrollToStationList" class="bg-white text-blue-600 px-6 py-3 rounded-full font-semibold hover:bg-blue-100 transition duration-300">Start Listening</button>
+                <button @click="console.log('Button clicked'); scrollToStationList()" class="bg-white text-blue-600 px-6 py-3 rounded-full font-semibold hover:bg-blue-100 transition duration-300">Start Listening</button>
             </div>
             <div class="md:w-1/2">
                 <img src="{% static 'images/radio.gif' %}" alt="Radio GIF" class="w-full max-w-md mx-auto rounded-lg shadow-lg">
@@ -71,9 +71,7 @@
 </div>
 
 <script>
-console.log("Script started");
 function radioApp() {
-    console.log("radioApp function called");
     return {
         query: '',
         stations: [],
@@ -83,41 +81,48 @@ function radioApp() {
         currentStation: null,
         isPlaying: false,
         volume: 50,
-        init() {
-            console.log("Alpine component initialized");
-            this.fetchStations();
-        },
         scrollToStationList() {
+            console.log('scrollToStationList called');
             const stationList = document.querySelector('#station-list');
+            console.log('stationList element:', stationList);
             if (stationList) {
-                stationList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const yOffset = -100; // Adjust this value to account for any fixed headers
+                const y = stationList.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                window.scrollTo({top: y, behavior: 'smooth'});
+                console.log('Scrolling to station list');
+            } else {
+                console.log('Station list element not found');
             }
         },
         fetchStations() {
-            console.log('fetchStations called, page:', this.currentPage);
             this.loading = true;
-            const url = this.query
-                ? `/search/?query=${encodeURIComponent(this.query)}&page=${this.currentPage}`
-                : `/search/?page=${this.currentPage}`;
-            fetch(url)
+            fetch(`/search/?page=${this.currentPage}`)
                 .then(response => response.json())
                 .then(data => {
                     this.stations = data.results;
                     this.totalPages = data.total_pages;
                     this.loading = false;
-                    console.log('Stations fetched:', this.stations);
                 });
         },
         searchStations() {
-            console.log('searchStations called');
+            this.loading = true;
             this.currentPage = 1;
-            this.fetchStations();
+            fetch(`/search/?query=${this.query}&page=${this.currentPage}`)
+                .then(response => response.json())
+                .then(data => {
+                    this.stations = data.results;
+                    this.totalPages = data.total_pages;
+                    this.loading = false;
+                });
         },
         changePage(page) {
-            console.log('changePage called with page:', page);
             if (page >= 1 && page <= this.totalPages) {
                 this.currentPage = page;
-                this.fetchStations();
+                if (this.query) {
+                    this.searchStations();
+                } else {
+                    this.fetchStations();
+                }
             }
         },
         playStation(station) {
@@ -169,7 +174,7 @@ function radioApp() {
             }
         },
         addToFavorites(station) {
-            fetch('/add_favorite/', {
+            fetch('/add_favorite', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -181,13 +186,7 @@ function radioApp() {
             .then(data => {
                 if (data.success) {
                     alert('Added to favorites!');
-                } else {
-                    alert('Failed to add to favorites. Please try again.');
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
             });
         }
     };
