@@ -1,84 +1,169 @@
-
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="max-w-screen-xl mx-auto">
-    <h1 class="text-3xl font-bold mb-4">Your Favorite Stations</h1>
+<div class="max-w-screen-xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Your Favorite Stations</h1>
     
-    <div x-data="{ favorites: [] }" x-init="fetchFavorites()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div x-data="favoriteApp()" x-init="init()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <template x-for="station in favorites" :key="station.id">
             <div class="bg-white p-4 rounded-lg shadow">
                 <h2 x-text="station.name" class="text-xl font-bold mb-2"></h2>
                 <p x-text="station.country" class="text-gray-600"></p>
                 <button @click="playStation(station)" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Play</button>
-                <button @click="removeFavorite(station.id)" class="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Remove</button>
+                <button @click="removeFromFavorites(station.id)" class="mt-2 ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Remove</button>
             </div>
         </template>
     </div>
 
-    <div id="player" class="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg hidden">
+    <div id="player" class="fixed bottom-0 left-0 right-0 bg-gray-900 text-white p-4 shadow-lg" x-show="currentStation" x-cloak>
         <div class="max-w-screen-xl mx-auto flex items-center justify-between">
-            <div>
-                <h3 id="now-playing" class="text-lg font-bold"></h3>
-                <p id="station-name" class="text-gray-600"></p>
+            <div class="flex items-center">
+                <img :src="currentStation?.favicon || 'https://via.placeholder.com/50'" class="w-12 h-12 rounded-full mr-4" alt="Station logo">
+                <div>
+                    <h3 x-text="currentStation?.name" class="text-lg font-bold"></h3>
+                    <p x-text="currentStation?.country" class="text-gray-400"></p>
+                </div>
             </div>
-            <audio id="audio-player" controls></audio>
+            <div class="flex items-center">
+                <button @click="togglePlay" class="mr-4 focus:outline-none">
+                    <svg x-show="!isPlaying" class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                    <svg x-show="isPlaying" class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+                <audio id="audio-player" x-ref="audioPlayer" @play="isPlaying = true" @pause="isPlaying = false" @ended="isPlaying = false"></audio>
+                <input type="range" min="0" max="100" x-model="volume" @input="setVolume" class="w-32">
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    function fetchFavorites() {
-        this.favorites = JSON.parse('{{ favorites|safe }}');
-    }
-        // Implement favorite stations fetching logic here
-    }
-
-    function playStation(station) {
-        const player = document.getElementById('player');
-        const audioPlayer = document.getElementById('audio-player');
-        const nowPlaying = document.getElementById('now-playing');
-        const stationName = document.getElementById('station-name');
-
-        player.classList.remove('hidden');
-        audioPlayer.src = station.url;
-        audioPlayer.play();
-        nowPlaying.textContent = 'Now Playing:';
-        stationName.textContent = station.name;
-    }
-
-    function removeFavorite(stationId) {
-        fetch('/remove_favorite/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: `station_id=${stationId}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                this.favorites = this.favorites.filter(station => station.station_id !== stationId);
+function favoriteApp() {
+    return {
+        favorites: [],
+        currentStation: null,
+        isPlaying: false,
+        volume: 50,
+        audioPlayer: null,
+        init() {
+            this.fetchFavorites();
+            this.$nextTick(() => {
+                this.initAudioPlayer();
+            });
+        },
+        initAudioPlayer() {
+            this.audioPlayer = document.getElementById('audio-player');
+            if (!this.audioPlayer) {
+                console.error('Audio player not found during initialization');
+            } else {
+                console.log('Audio player initialized successfully');
+                this.audioPlayer.volume = this.volume / 100;
+                this.audioPlayer.addEventListener('play', () => this.isPlaying = true);
+                this.audioPlayer.addEventListener('pause', () => this.isPlaying = false);
+                this.audioPlayer.addEventListener('ended', () => {
+                    this.isPlaying = false;
+                    this.currentStation = null;
+                });
             }
-        });
-    }
-
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+        },
+        fetchFavorites() {
+            fetch('/favorites/list/')
+                .then(response => response.json())
+                .then(data => {
+                    this.favorites = data;
+                })
+                .catch(error => {
+                    console.error('Error fetching favorites:', error);
+                });
+        },
+        playStation(station) {
+            if (!this.audioPlayer) {
+                this.initAudioPlayer();
+            }
+            if (this.currentStation && this.currentStation.id === station.id) {
+                this.togglePlay();
+            } else {
+                this.currentStation = station;
+                if (this.audioPlayer) {
+                    this.audioPlayer.src = station.url;
+                    this.audioPlayer.play().catch(error => {
+                        console.error('Error playing audio:', error);
+                        alert('Unable to play this station. Please try another one.');
+                        this.currentStation = null;
+                        this.isPlaying = false;
+                    });
+                } else {
+                    console.error('Audio player not found');
                 }
             }
+        },
+        togglePlay() {
+            if (this.audioPlayer && this.currentStation) {
+                if (this.isPlaying) {
+                    this.audioPlayer.pause();
+                } else {
+                    this.audioPlayer.play().catch(error => {
+                        console.error('Error playing audio:', error);
+                        alert('Unable to play this station. Please try another one.');
+                    });
+                }
+            }
+        },
+        setVolume() {
+            if (this.audioPlayer) {
+                this.audioPlayer.volume = this.volume / 100;
+            } else {
+                console.error('Audio player not found');
+            }
+        },
+        removeFromFavorites(stationId) {
+            fetch(`/remove_favorite/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: `station_id=${stationId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.favorites = this.favorites.filter(station => station.id !== stationId);
+                    if (this.currentStation && this.currentStation.id === stationId) {
+                        this.$refs.audioPlayer.pause();
+                        this.currentStation = null;
+                        this.isPlaying = false;
+                    }
+                    alert('Removed from favorites!');
+                } else {
+                    alert('Failed to remove from favorites. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            });
         }
-        return cookieValue;
+    };
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
     }
-        // Implement remove favorite logic here
-    }
+    return cookieValue;
+}
 </script>
 {% endblock %}
