@@ -11,7 +11,7 @@
                 <h2 x-text="station.name" class="text-xl font-bold mb-2"></h2>
                 <p x-text="station.country" class="text-gray-600"></p>
                 <button @click="playStation(station)" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Play</button>
-                <button @click="removeFromFavorites(station.id)" class="mt-2 ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Remove</button>
+                <button @click="removeFromFavorites(station.station_id)" class="mt-2 ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Remove</button>
             </div>
         </template>
     </div>
@@ -42,133 +42,155 @@
 </div>
 
 <script>
-function favoriteApp() {
-    return {
-        favorites: [],
-        currentStation: null,
-        isPlaying: false,
-        volume: 50,
-        audioPlayer: null,
-        init() {
-            this.fetchFavorites();
-            this.$nextTick(() => {
-                this.initAudioPlayer();
-            });
-        },
-        initAudioPlayer() {
-            this.audioPlayer = document.getElementById('audio-player');
-            if (!this.audioPlayer) {
-                console.error('Audio player not found during initialization');
-            } else {
-                console.log('Audio player initialized successfully');
-                this.audioPlayer.volume = this.volume / 100;
-                this.audioPlayer.addEventListener('play', () => this.isPlaying = true);
-                this.audioPlayer.addEventListener('pause', () => this.isPlaying = false);
-                this.audioPlayer.addEventListener('ended', () => {
-                    this.isPlaying = false;
-                    this.currentStation = null;
+    function favoriteApp() {
+        return {
+            favorites: [],
+            currentStation: null,
+            isPlaying: false,
+            volume: 50,
+            audioPlayer: null,
+            init() {
+                this.fetchFavorites();
+                this.$nextTick(() => {
+                    this.initAudioPlayer();
                 });
-            }
-        },
-        fetchFavorites() {
-            fetch('/favorites/list/')
+            },
+            removeFromFavorites(stationId) {
+                // Immediately stop playback if the removed station is currently playing
+                if (this.currentStation && this.currentStation.station_id === stationId) {
+                    this.stopPlayback();
+                }
+                
+                // Make the server request
+                fetch('/remove_favorite/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: `station_id=${stationId}`
+                })
                 .then(response => response.json())
                 .then(data => {
-                    this.favorites = data;
+                    if (data.success) {
+                        console.log('Favorite removed successfully');
+                        // Update the favorites list
+                        this.updateFavorites(stationId);
+                        alert('Removed from favorites!');
+                    } else {
+                        console.error('Failed to remove favorite');
+                        alert('Failed to remove from favorites. Please try again.');
+                    }
                 })
                 .catch(error => {
-                    console.error('Error fetching favorites:', error);
+                    console.error('Error removing favorite:', error);
+                    alert('An error occurred. Please try again.');
                 });
-        },
-        playStation(station) {
-            if (!this.audioPlayer) {
-                this.initAudioPlayer();
-            }
-            if (this.currentStation && this.currentStation.id === station.id) {
-                this.togglePlay();
-            } else {
-                this.currentStation = station;
+            },
+            stopPlayback() {
                 if (this.audioPlayer) {
-                    this.audioPlayer.src = station.url;
-                    this.audioPlayer.play().catch(error => {
-                        console.error('Error playing audio:', error);
-                        alert('Unable to play this station. Please try another one.');
-                        this.currentStation = null;
+                    this.audioPlayer.pause();
+                    this.audioPlayer.src = '';
+                }
+                this.currentStation = null;
+                this.isPlaying = false;
+                // Force Alpine to re-render
+                this.$nextTick(() => {
+                    this.currentStation = null;
+                });
+            },
+            updateFavorites(removedStationId) {
+                this.favorites = this.favorites.filter(station => station.station_id !== removedStationId);
+                // Force Alpine to re-render
+                this.$nextTick(() => {
+                    this.favorites = [...this.favorites];
+                });
+            },
+            initAudioPlayer() {
+                this.audioPlayer = document.getElementById('audio-player');
+                if (!this.audioPlayer) {
+                    console.error('Audio player not found during initialization');
+                } else {
+                    console.log('Audio player initialized successfully');
+                    this.audioPlayer.volume = this.volume / 100;
+                    this.audioPlayer.addEventListener('play', () => this.isPlaying = true);
+                    this.audioPlayer.addEventListener('pause', () => this.isPlaying = false);
+                    this.audioPlayer.addEventListener('ended', () => {
                         this.isPlaying = false;
+                        this.currentStation = null;
                     });
+                }
+            },
+            fetchFavorites() {
+                fetch('/favorites/list/')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Use Alpine's $nextTick to ensure the UI updates
+                        this.$nextTick(() => {
+                            this.favorites = data;
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching favorites:', error);
+                    });
+            },
+            playStation(station) {
+                if (!this.audioPlayer) {
+                    this.initAudioPlayer();
+                }
+                if (this.currentStation && this.currentStation.id === station.id) {
+                    this.togglePlay();
+                } else {
+                    this.currentStation = station;
+                    if (this.audioPlayer) {
+                        this.audioPlayer.src = station.url;
+                        this.audioPlayer.play().catch(error => {
+                            console.error('Error playing audio:', error);
+                            alert('Unable to play this station. Please try another one.');
+                            this.currentStation = null;
+                            this.isPlaying = false;
+                        });
+                    } else {
+                        console.error('Audio player not found');
+                    }
+                }
+            },
+            togglePlay() {
+                if (this.audioPlayer && this.currentStation) {
+                    if (this.isPlaying) {
+                        this.audioPlayer.pause();
+                    } else {
+                        this.audioPlayer.play().catch(error => {
+                            console.error('Error playing audio:', error);
+                            alert('Unable to play this station. Please try another one.');
+                        });
+                    }
+                }
+            },
+            setVolume() {
+                if (this.audioPlayer) {
+                    this.audioPlayer.volume = this.volume / 100;
                 } else {
                     console.error('Audio player not found');
                 }
             }
-        },
-        togglePlay() {
-            if (this.audioPlayer && this.currentStation) {
-                if (this.isPlaying) {
-                    this.audioPlayer.pause();
-                } else {
-                    this.audioPlayer.play().catch(error => {
-                        console.error('Error playing audio:', error);
-                        alert('Unable to play this station. Please try another one.');
-                    });
+        };
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
                 }
-            }
-        },
-        setVolume() {
-            if (this.audioPlayer) {
-                this.audioPlayer.volume = this.volume / 100;
-            } else {
-                console.error('Audio player not found');
-            }
-        },
-        removeFromFavorites(stationId) {
-            fetch(/remove_favorite/, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({ station_id: stationId })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    this.favorites = this.favorites.filter(station => station.station_id !== stationId);
-                    if (this.currentStation && this.currentStation.station_id === stationId) {
-                        this.$refs.audioPlayer.pause();
-                        this.currentStation = null;
-                        this.isPlaying = false;
-                    }
-                    console.log('Removed from favorites!');
-                } else {
-                    throw new Error(data.message || 'Failed to remove from favorites');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert(error.message || 'An error occurred. Please try again.');
-            });
-        }        
-    };
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
             }
         }
+        return cookieValue;
     }
-    return cookieValue;
-}
-</script>
+    </script>
 {% endblock %}
+
