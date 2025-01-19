@@ -1,25 +1,51 @@
 {% extends 'base.html' %}
 {% load static %}
+{% block hero %}
+
+{% endblock %}
 
 {% block content %}
-<div class="max-w-screen-xl mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-6">Your Favorite Stations</h1>
-    
-    <div x-data="favoriteApp()" x-init="init()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+<div x-data="favoriteApp()" x-init="init()" class="z-0 max-w-screen-xl px-4 py-8 mx-auto">
+    <h1 class="mb-6 text-3xl font-bold mt-14">Your Favorite Stations</h1>
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <template x-for="station in favorites" :key="station.id">
-            <div class="bg-white p-4 rounded-lg shadow">
-                <h2 x-text="station.name" class="text-xl font-bold mb-2"></h2>
-                <p x-text="station.country" class="text-gray-600"></p>
-                <button @click="playStation(station)" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Play</button>
-                <button @click="removeFromFavorites(station.station_id)" class="mt-2 ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Remove</button>
+            <div class="p-3 rounded shadow-lg bg-[#11110F]">
+                <div class="relative group">
+                    <img :src="getRandomImage()" class="block object-cover w-full h-48 rounded" alt="" /> 
+
+                    <div class="absolute top-0 flex flex-col items-center justify-center w-full h-full transition bg-black bg-opacity-0 rounded group-hover:bg-opacity-60 group-hover:opacity-100">
+
+                        <!-- Play button -->
+                        <button @click="playStation(station)" class="mb-2 text-white transition transform opacity-0 hover:scale-110 group-hover:opacity-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-play-circle-fill" viewBox="0 0 16 16">
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM6.79 5.093A.5.5 0 0 0 6 5.5v5a.5.5 0 0 0 .79.407l3.5-2.5a.5.5 0 0 0 0-.814l-3.5-2.5z" />
+                            </svg>
+                        </button>
+                        <!-- Remove button -->
+                        <button @click="removeFromFavorites(station.station_id)" class="p-4 text-white transition transform opacity-0 hover:scale-110 group-hover:opacity-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+                                <path fill="currentColor" d="M2.854 2.146a.5.5 0 1 0-.708.708l1.271 1.27a4 4 0 0 0-.156.15c-1.688 1.705-1.68 4.476.016 6.189l6.277 6.34c.26.263.682.263.942 0l2.787-2.813l3.863 3.864a.5.5 0 0 0 .708-.708zm9.722 11.137l-2.55 2.575l-6.039-6.099c-1.313-1.326-1.314-3.47-.015-4.782q.074-.075.153-.145zm3.452-3.485l-2.045 2.064l.707.707l2.05-2.07a4.41 4.41 0 0 0-.016-6.187a4.306 4.306 0 0 0-6.135-.015l-.596.603l-.605-.61l-.1-.099a4.32 4.32 0 0 0-4.035-1.06l.874.874a3.32 3.32 0 0 1 2.55.988l.961.97a.5.5 0 0 0 .711 0L11.3 5a3.306 3.306 0 0 1 4.713.016a3.41 3.41 0 0 1 .016 4.78z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-5">
+                    <h3 x-text="station.name" class="text-lg text-white"></h3>
+                    <p x-text="station.country" class="text-gray-400"></p>
+                </div>
             </div>
         </template>
     </div>
 
-    <div id="player" class="fixed bottom-0 left-0 right-0 bg-gray-900 text-white p-4 shadow-lg" x-show="currentStation" x-cloak>
-        <div class="max-w-screen-xl mx-auto flex items-center justify-between">
+    <!-- Audio Player -->
+    <div id="player" class="rounded-full fixed bottom-0 left-10 right-10 px-7 p-4 mb-6 text-[#FFFFE3] bg-black shadow-lg"
+         x-show="currentStation && isPlaying" x-cloak>
+        <div class="flex items-center justify-between max-w-screen-xl mx-auto">
             <div class="flex items-center">
-                <img :src="currentStation?.favicon || 'https://via.placeholder.com/50'" class="w-12 h-12 rounded-full mr-4" alt="Station logo">
+                <img :src="currentStation?.favicon || 'https://images.unsplash.com/photo-1644530099027-5ddbce057580?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGhlYXJ0JTIwYWJzdHJhY3R8ZW58MHx8MHx8fDA%3D'"
+                     class="w-12 h-12 mr-4 rounded-full" alt="Station logo">
                 <div>
                     <h3 x-text="currentStation?.name" class="text-lg font-bold"></h3>
                     <p x-text="currentStation?.country" class="text-gray-400"></p>
@@ -28,13 +54,12 @@
             <div class="flex items-center">
                 <button @click="togglePlay" class="mr-4 focus:outline-none">
                     <svg x-show="!isPlaying" class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2.5z" clip-rule="evenodd" />
                     </svg>
-                    <svg x-show="isPlaying" class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    <svg x-show="isPlaying" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M5.746 3a1.75 1.75 0 0 0-1.75 1.75v14.5c0 .966.784 1.75 1.75 1.75h3.5a1.75 1.75 0 0 0 1.75-1.75V4.75A1.75 1.75 0 0 0 9.246 3zm9 0a1.75 1.75 0 0 0-1.75 1.75v14.5c0 .966.784 1.75 1.75 1.75h3.5a1.75 1.75 0 0 0 1.75-1.75V4.75A1.75 1.75 0 0 0 18.246 3z" />
                     </svg>
                 </button>
-                <audio id="audio-player" x-ref="audioPlayer" @play="isPlaying = true" @pause="isPlaying = false" @ended="isPlaying = false"></audio>
+                <audio id="audioPlayer" class="hidden"></audio>
                 <input type="range" min="0" max="100" x-model="volume" @input="setVolume" class="w-32">
             </div>
         </div>
@@ -44,24 +69,43 @@
 <script>
     function favoriteApp() {
         return {
-            favorites: [],
-            currentStation: null,
-            isPlaying: false,
-            volume: 50,
-            audioPlayer: null,
+            favorites: [],            // Array of favorite stations
+            currentStation: null,     // The currently playing station
+            isPlaying: false,         // Track if the audio is playing or not
+            volume: 50,               // Volume control
+            audioPlayer: null,        // Reference to the audio player element
+            images: [
+                'https://images.unsplash.com/photo-1635776063328-153b13e3c245?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8Z3JhZGllbnRzfGVufDB8fDB8fHww',
+                'https://images.unsplash.com/photo-1635776062764-e025521e3df3?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fGdyYWRpZW50c3xlbnwwfHwwfHx8MA%3D%3D',
+                'https://images.unsplash.com/photo-1635776064096-4e12cce9ead4?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGdyYWRpZW50c3xlbnwwfHwwfHx8MA%3D%3D'
+            ],
+            getRandomImage() {
+                const randomIndex = Math.floor(Math.random() * this.images.length);
+                return this.images[randomIndex];
+            },
+
+            // Initializes the app, fetches favorites, and initializes the audio player
             init() {
-                this.fetchFavorites();
+                this.fetchFavorites();  // Get the list of favorites
                 this.$nextTick(() => {
-                    this.initAudioPlayer();
+                    this.audioPlayer = document.getElementById('audioPlayer');
+                    if (this.audioPlayer) {
+                        this.audioPlayer.volume = this.volume / 100;
+                        // Add event listeners for play, pause, and end
+                        this.audioPlayer.addEventListener('play', () => this.isPlaying = true);
+                        this.audioPlayer.addEventListener('pause', () => this.isPlaying = false);
+                        this.audioPlayer.addEventListener('ended', () => this.stopPlayback());
+                    } else {
+                        console.error("Audio player element is not found!");
+                    }
                 });
             },
+
+            // Removes a station from the favorites
             removeFromFavorites(stationId) {
-                // Immediately stop playback if the removed station is currently playing
                 if (this.currentStation && this.currentStation.station_id === stationId) {
-                    this.stopPlayback();
+                    this.stopPlayback();  // Stop playback if the current station is removed
                 }
-                
-                // Make the server request
                 fetch('/remove_favorite/', {
                     method: 'POST',
                     headers: {
@@ -73,20 +117,15 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        console.log('Favorite removed successfully');
-                        // Update the favorites list
-                        this.updateFavorites(stationId);
+                        this.updateFavorites(stationId);  
                         alert('Removed from favorites!');
                     } else {
-                        console.error('Failed to remove favorite');
                         alert('Failed to remove from favorites. Please try again.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error removing favorite:', error);
-                    alert('An error occurred. Please try again.');
+ }
                 });
             },
+
+            // Stops the playback of the current station
             stopPlayback() {
                 if (this.audioPlayer) {
                     this.audioPlayer.pause();
@@ -94,89 +133,77 @@
                 }
                 this.currentStation = null;
                 this.isPlaying = false;
-                // Force Alpine to re-render
-                this.$nextTick(() => {
-                    this.currentStation = null;
-                });
             },
+
+            // Updates the list of favorites after removing a station
             updateFavorites(removedStationId) {
                 this.favorites = this.favorites.filter(station => station.station_id !== removedStationId);
-                // Force Alpine to re-render
-                this.$nextTick(() => {
-                    this.favorites = [...this.favorites];
-                });
             },
-            initAudioPlayer() {
-                this.audioPlayer = document.getElementById('audio-player');
-                if (!this.audioPlayer) {
-                    console.error('Audio player not found during initialization');
-                } else {
-                    console.log('Audio player initialized successfully');
-                    this.audioPlayer.volume = this.volume / 100;
-                    this.audioPlayer.addEventListener('play', () => this.isPlaying = true);
-                    this.audioPlayer.addEventListener('pause', () => this.isPlaying = false);
-                    this.audioPlayer.addEventListener('ended', () => {
-                        this.isPlaying = false;
-                        this.currentStation = null;
-                    });
-                }
-            },
+
+            // Fetches the list of favorites from the server
             fetchFavorites() {
+                console.log('Fetching favorites...');
                 fetch('/favorites/list/')
                     .then(response => response.json())
-                    .then(data => {
-                        // Use Alpine's $nextTick to ensure the UI updates
-                        this.$nextTick(() => {
-                            this.favorites = data;
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error fetching favorites:', error);
+                    .then(data => { 
+                        this.favorites = data; 
+                        this.$nextTick(() => { console.log('Favorites updated:', this.favorites); });
                     });
             },
+
+            // Plays a station
             playStation(station) {
-                if (!this.audioPlayer) {
-                    this.initAudioPlayer();
+                console.log('Playing station:', station);
+                if (!station || !station.url) {
+                    console.error('Invalid station object:', station);
+                    return;
                 }
-                if (this.currentStation && this.currentStation.id === station.id) {
-                    this.togglePlay();
+
+                // Check if the station is already playing
+                if (this.currentStation && this.currentStation.station_id === station.station_id) {
+                    this.togglePlay();  // If the same station is clicked, toggle play/pause
                 } else {
-                    this.currentStation = station;
+                    this.currentStation = station;  // Set the new current station
                     if (this.audioPlayer) {
-                        this.audioPlayer.src = station.url;
-                        this.audioPlayer.play().catch(error => {
+                        this.audioPlayer.src = station.url;  // Set the station URL to the audio player
+
+                        this.audioPlayer.play().then(() => {
+                            this.isPlaying = true;
+                        }).catch((error) => {
                             console.error('Error playing audio:', error);
                             alert('Unable to play this station. Please try another one.');
                             this.currentStation = null;
                             this.isPlaying = false;
                         });
                     } else {
-                        console.error('Audio player not found');
+                        console.error('Audio player element is not available.');
                     }
                 }
             },
+
+            // Toggles play/pause state
             togglePlay() {
-                if (this.audioPlayer && this.currentStation) {
+                console.log('Toggling play state');
+                if (this.audioPlayer) {
                     if (this.isPlaying) {
                         this.audioPlayer.pause();
                     } else {
-                        this.audioPlayer.play().catch(error => {
-                            console.error('Error playing audio:', error);
-                            alert('Unable to play this station. Please try another one.');
-                        });
+                        this.audioPlayer.play();
                     }
+                    this.isPlaying = !this.isPlaying;
                 }
             },
+
+            // Sets the volume of the audio player
             setVolume() {
                 if (this.audioPlayer) {
                     this.audioPlayer.volume = this.volume / 100;
-                } else {
-                    console.error('Audio player not found');
                 }
             }
         };
     }
-    
+
+    // Helper function to get the CSRF token from cookies
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -191,6 +218,6 @@
         }
         return cookieValue;
     }
-    </script>
-{% endblock %}
+</script>
 
+{% endblock %}

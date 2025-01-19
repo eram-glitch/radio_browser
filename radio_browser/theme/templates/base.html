@@ -4,34 +4,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Radyoo!{% endblock %}</title>
-    <link href="{% static 'css/tailwind.output.css' %}" rel="stylesheet">
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
-</head>
-<body class="bg-gray-100">
-    <header class="bg-blue-600 text-white p-4">
-        <h1 class="text-2xl font-bold">Radyoo!</h1>
-        <nav>
-            <ul class="flex space-x-4">
-                <li><a href="{% url 'home' %}" class="hover:underline">Home</a></li>
-                {% if user.is_authenticated %}
-                    <li><a href="{% url 'favorites' %}" class="hover:underline">Favorites</a></li>
-                    <li><a href="{% url 'logout' %}" class="hover:underline">Logout</a></li>
-                {% else %}
-                    <li><a href="{% url 'login' %}" class="hover:underline">Login</a></li>
-                    <li><a href="{% url 'register' %}" class="hover:underline">Register</a></li>
-                {% endif %}
-            </ul>
-        </nav>
-    </header>
+    <title>{% block title %}Radyoo{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.10.2/cdn.min.js" defer></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+    <link href="https://api.fontshare.com/v2/css?f[]=boxing@400&display=swap" rel="stylesheet"> 
+    <style>        
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            height: 100vh;
+            scroll-behavior: smooth;
+        }
+        .boxing {
+            font-family: 'Boxing', sans-serif;
+            font-weight: 800;
+        }
 
-    <main class="container mx-auto mt-8 px-4">
+        .bespoke {
+            font-family: 'Bespoke Stencil', sans-serif;
+            font-weight: 800;
+        }
+        @keyframes bounceUp {
+            0% {
+                transform: translateY(-10);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+            100% {
+                transform: translateY(-10);
+            }
+        }
+        @keyframes zoomInText {
+            from {
+            transform: scale(0.8);
+            opacity: 0;
+            }
+            to {
+            transform: scale(1);
+            opacity: 1;
+            }
+        }
+        
+        .text-animate {
+            animation: zoomInText 1s ease-out forwards;
+            transform-origin: center;  
+        }
+        
+
+        .animate-bounceUp {
+            animation: bounceUp 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-[#FFFFE3]" x-data="{ scrolled: false }" @scroll.window="scrolled = window.scrollY > 800">
+
+    <nav :class="scrolled ? 'bg-[#FFFFE3] h-20 shadow-lg' : 'bg-cream-100 h-16'" class="fixed top-0 z-50 flex items-center justify-between w-full p-4 transition-all duration-300 ease-in-out">
+        <div class="text-sm">
+            <span class="font-bold">
+                <a class="relative px-2 py-1 font-bold group" href="{% url 'home' %}">
+                    RADYOO
+                </a>
+            </span>
+        </div>
+        <div class="flex space-x-4 text-sm">
+            {% if user.is_authenticated %}
+                <a class="relative px-2 py-1 font-bold group" href="{% url 'favorites' %}">
+                    FAVORITES
+                    <span class="absolute left-0 bottom-0 h-0.5 bg-black w-0 group-hover:w-full transition-all duration-500 ease-in-out" style="bottom: -5px;"></span>
+                </a>
+                <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="relative px-2 py-1 font-bold group">
+                        LOGOUT
+                        <span class="absolute left-0 bottom-0 h-0.5 bg-black w-0 group-hover:w-full transition-all duration-500 ease-in-out" style="bottom: -5px;"></span>
+                    </button>
+                </form>
+            {% else %}
+                <a class="relative px-2 py-1 font-bold group" href="{% url 'register' %}#registration-form">
+                    REGISTER
+                    <span class="absolute left-0 bottom-0 h-0.5 bg-black w-0 group-hover:w-full transition-all duration-500 ease-in-out" style="bottom: -5px;"></span>
+                </a>
+                <a class="relative px-2 py-1 font-bold group" href="{% url 'login' %}#login-form">
+                    LOGIN
+                    <span class="absolute left-0 bottom-0 h-0.5 bg-black w-0 group-hover:w-full transition-all duration-500 ease-in-out" style="bottom: -5px;"></span>
+                </a>
+            {% endif %}
+        </div>
+    </nav>
+
+    {% block hero %}
+    <!-- Hero Section -->
+    <div class="h-screen w-full bg-[#FFFFE3] flex flex-col justify-between">
+        <div class="relative flex items-center justify-center h-screen text-center">
+
+            <span class="text-animate z-10 mt-48 text-[200px] text-[#11110F] boxing">Radyoo</span>
+        
+            <img alt="Transparent Radio" class="z-0 absolute object-cover left-100 top-20 transform -translate-y-16 w-[600px] h-[600px] animate-bounceUp md:w-[650px] md:h-[650px]" src="{% static 'images/radio1.png' %}" />
+        
+        </div>
+        <div class="mb-8 text-center">
+            <a href="{% url 'home' %}#station-list" class="px-6 py-3 text-xs font-bold text-white transition duration-300 bg-[#11110F] border-2 border-[#1E1E1B] rounded-full hover:bg-transparent hover:text-[#1E1E1B]">
+                LISTEN NOW
+            </a>
+        </div>
+    </div>
+    {% endblock %}
+    <main class="container px-4 mx-auto mt-8">
         {% block content %}
         {% endblock %}
     </main>
 
-    <footer class="bg-blue-600 text-white p-4 mt-8">
-        <p>&copy; 2023 Radyoo! All rights reserved.</p>
+    <footer class="flex items-center justify-center w-full mt-24 bg-black min-h-40">
+        <div class="flex flex-col w-full px-4 text-[#FFFFE3] md:w-2/3">
+            <div class="w-full mt-16 font-bold text-7xl">
+                <h1 class="w-full md:w-2/3">Nostalgia at your fingertips!</h1>
+            </div>
+            <div class="flex flex-col mt-8 md:flex-row md:justify-between">
+                <p class="w-full text-[#a4a48f] md:w-2/3">Our aim is to provide a clean and easy listening experience.</p>
+            </div>
+            <div class="flex flex-col">
+                <div class="flex flex-row justify-between mt-10 mb-4">
+                    <div>
+                        <a class="relative font-bold group" href="{% url 'home' %}">
+                            <img src="{% static 'images/logo.svg' %}" alt="Logo" width="128" height="128">
+                        </a>
+                    </div>
+                    <div class="flex flex-row items-center justify-between space-x-8">
+                        <a>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32"><path fill="currentColor" fill-rule="evenodd" d="M16 4C9.371 4 4 9.371 4 16c0 5.3 3.438 9.8 8.207 11.387c.602.11.82-.258.82-.578c0-.286-.011-1.04-.015-2.04c-3.34.723-4.043-1.609-4.043-1.609c-.547-1.387-1.332-1.758-1.332-1.758c-1.09-.742.082-.726.082-.726c1.203.086 1.836 1.234 1.836 1.234c1.07 1.836 2.808 1.305 3.492 1c.11-.777.422-1.305.762-1.605c-2.664-.301-5.465-1.332-5.465-5.93c0-1.313.469-2.383 1.234-3.223c-.121-.3-.535-1.523.117-3.175c0 0 1.008-.32 3.301 1.23A11.5 11.5 0 0 1 16 9.805c1.02.004 2.047.136 3.004.402c2.293-1.55 3.297-1.23 3.297-1.23c.656 1.652.246 2.875.12 3.175c.77.84 1.231 1.91 1.231 3.223c0 4.61-2.804 5.621-5.476 5.922c.43.367.812 1.101.812 2.219c0 1.605-.011 2.898-.011 3.293c0 .32.214.695.824.578C24.566 25.797 28 21.3 28 16c0-6.629-5.371-12-12-12"/></svg>                           
+                        </a>
+                        <a>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93zM6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37z"/></svg>
+                        </a>
+                        <a href="https://www.youtube.com/channel/UCjtCbnkIaiCJgj13sEZ9iqw">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="-2 -2 24 24"><g fill="currentColor"><path d="M14.017 0h-8.07A5.954 5.954 0 0 0 0 5.948v8.07a5.954 5.954 0 0 0 5.948 5.947h8.07a5.954 5.954 0 0 0 5.947-5.948v-8.07A5.954 5.954 0 0 0 14.017 0m3.94 14.017a3.94 3.94 0 0 1-3.94 3.94h-8.07a3.94 3.94 0 0 1-3.939-3.94v-8.07a3.94 3.94 0 0 1 3.94-3.939h8.07a3.94 3.94 0 0 1 3.939 3.94v8.07z"/><path d="M9.982 4.819A5.17 5.17 0 0 0 4.82 9.982a5.17 5.17 0 0 0 5.163 5.164a5.17 5.17 0 0 0 5.164-5.164A5.17 5.17 0 0 0 9.982 4.82zm0 8.319a3.155 3.155 0 1 1 0-6.31a3.155 3.155 0 0 1 0 6.31"/><circle cx="15.156" cy="4.858" r="1.237"/></g></svg>                           
+                        </a>
+                    </div>
+                </div>
+                <hr class="border-[#FFFFE3]"/>
+                <p class="w-full my-12 text-center text-[#a4a48f]">Copyright © 2025 Radyoo</p>
+            </div>
+        </div> 
     </footer>
+
+
 </body>
 </html>
